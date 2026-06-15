@@ -132,10 +132,11 @@ function updateDateDisplay() {
 // ============================================
 // COUNTS
 // ============================================
-function updateAllCounts() {
+async function updateAllCounts() {
   for (const key in SECTIONS) {
-    const data = getData(key);
+    const data = await getData(key);
     const el = document.getElementById('count-' + key);
+
     if (el) {
       el.textContent = data.length + ' ' + SECTIONS[key].unit;
     }
@@ -145,36 +146,32 @@ function updateAllCounts() {
 // ============================================
 // NAVIGATION
 // ============================================
-function openSection(key) {
+async function openSection(key) {
   currentSection = key;
+
   const cfg = SECTIONS[key];
 
-  // Update header
   document.getElementById('headerEmoji').textContent = cfg.icon;
   document.getElementById('headerTitle').textContent = cfg.label;
 
-  // Toggle views
   document.getElementById('homeGrid').classList.add('hidden');
   document.getElementById('sectionView').classList.remove('hidden');
-  document.getElementById('sectionTitle').textContent = cfg.icon + ' ' + cfg.label;
 
-  // Show correct form
+  document.getElementById('sectionTitle').textContent =
+    cfg.icon + ' ' + cfg.label;
+
   if (key === 'diary') {
     document.getElementById('addForm').classList.add('hidden');
     document.getElementById('diaryForm').classList.remove('hidden');
   } else {
     document.getElementById('addForm').classList.remove('hidden');
     document.getElementById('diaryForm').classList.add('hidden');
-    // Price row visibility
-    document.getElementById('priceRow').style.display = cfg.hasPrice ? '' : 'none';
-    // Reset form
-    document.getElementById('fName').value = '';
-    document.getElementById('fLink').value = '';
-    document.getElementById('fPrice').value = '';
-    document.getElementById('fNote').value = '';
+
+    document.getElementById('priceRow').style.display =
+      cfg.hasPrice ? '' : 'none';
   }
 
-  renderList(key);
+  await renderList(key);
 }
 
 function backToHome() {
@@ -253,44 +250,89 @@ function renderList(key) {
 // ============================================
 // ADD ITEM
 // ============================================
-function addItem() {
-  const name = document.getElementById('fName').value.trim();
-  if (!name) { showToast('⚠️ Em nhập tên trước nha!'); return; }
+async function addItem() {
 
-  const link  = document.getElementById('fLink').value.trim();
-  const price = document.getElementById('fPrice').value.trim();
-  const note  = document.getElementById('fNote').value.trim();
+  const name =
+    document.getElementById('fName').value.trim();
 
-  const data = getData(currentSection);
-  data.push({ id: genId(), name, link, price, note, ts: Date.now() });
-  setData(currentSection, data);
+  if (!name) {
+    showToast('⚠️ Em nhập tên trước nha!');
+    return;
+  }
 
-  // Reset form
+  const link =
+    document.getElementById('fLink').value.trim();
+
+  const price =
+    document.getElementById('fPrice').value.trim();
+
+  const note =
+    document.getElementById('fNote').value.trim();
+
+  const { error } = await supabase
+    .from('entries')
+    .insert([
+      {
+        section: currentSection,
+        name,
+        link,
+        price,
+        note,
+        ts: Date.now()
+      }
+    ]);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
   document.getElementById('fName').value = '';
   document.getElementById('fLink').value = '';
   document.getElementById('fPrice').value = '';
   document.getElementById('fNote').value = '';
 
-  renderList(currentSection);
-  updateAllCounts();
+  await renderList(currentSection);
+  await updateAllCounts();
+
   showToast('💕 Đã thêm vào danh sách!');
 }
 
 // ============================================
 // ADD DIARY
 // ============================================
-function addDiary() {
-  const text = document.getElementById('fDiary').value.trim();
-  if (!text) { showToast('⚠️ Em viết gì đi nha! 🌸'); return; }
+async function addDiary() {
 
-  const data = getData('diary');
-  data.push({ id: genId(), text, ts: Date.now() });
-  setData('diary', data);
+  const text =
+    document.getElementById('fDiary').value.trim();
+
+  if (!text) {
+    showToast('⚠️ Em viết gì đi nha!');
+    return;
+  }
+
+  const { error } = await supabase
+    .from('entries')
+    .insert([
+      {
+        section: 'diary',
+        diary_text: text,
+        name: 'diary',
+        ts: Date.now()
+      }
+    ]);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   document.getElementById('fDiary').value = '';
-  renderList('diary');
-  updateAllCounts();
-  showToast('💌 Đã lưu tâm sự của em!');
+
+  await renderList('diary');
+  await updateAllCounts();
+
+  showToast('💌 Đã lưu tâm sự!');
 }
 
 // ============================================
@@ -352,17 +394,27 @@ function closeDelete() {
   deleteTarget = { id: null, section: null };
 }
 
-function confirmDelete() {
-  const { id, section } = deleteTarget;
-  if (!id || !section) return;
+async function confirmDelete() {
 
-  let data = getData(section);
-  data = data.filter(i => i.id !== id);
-  setData(section, data);
+  const { id } = deleteTarget;
+
+  if (!id) return;
+
+  const { error } = await supabase
+    .from('entries')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   closeDelete();
-  renderList(section);
-  updateAllCounts();
+
+  await renderList(currentSection);
+  await updateAllCounts();
+
   showToast('🗑️ Đã xoá rồi nha!');
 }
 
