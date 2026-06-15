@@ -1,16 +1,13 @@
 /* ============================================
    💕 KHÔNG GIAN CỦA EM YÊU - APP.JS
+   100% Supabase — Không còn localStorage
    ============================================ */
-const SUPABASE_URL =
-  "https://ugxfbzsnpmwnwrwaanir.supabase.co";
 
-const SUPABASE_KEY =
-  "sb_publishable_rzp9YtPP-YHNOo95AtY4hA_b1zJIncj";
+const SUPABASE_URL = "https://ugxfbzsnpmwnwrwaanir.supabase.co";
+const SUPABASE_KEY = "sb_publishable_rzp9YtPP-YHNOo95AtY4hA_b1zJIncj";
 
-const supabase = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ---- Config ----
 const SECTIONS = {
   items:  { label: 'Món đồ yêu thích',    icon: '🛍️', hasPrice: true,  unit: 'món' },
@@ -25,16 +22,38 @@ const SECTIONS = {
 let currentSection = null;
 let deleteTarget = { id: null, section: null };
 
-// ---- LocalStorage Helpers ----
-function getData(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; }
-  catch { return []; }
+// ============================================
+// SUPABASE DATA HELPERS
+// ============================================
+
+/** Lấy tất cả items của một section từ Supabase */
+async function fetchSection(sectionKey) {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('section', sectionKey)
+    .order('ts', { ascending: true });
+
+  if (error) {
+    console.error('fetchSection error:', error);
+    return [];
+  }
+  return data || [];
 }
-function setData(key, val) {
-  localStorage.setItem(key, JSON.stringify(val));
-}
-function genId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+/** Lấy một item theo id từ Supabase */
+async function fetchItemById(id) {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('fetchItemById error:', error);
+    return null;
+  }
+  return data;
 }
 
 // ============================================
@@ -78,7 +97,6 @@ function spawnFloatingHearts() {
 function openLetter() {
   const overlay = document.getElementById('letterOverlay');
   overlay.classList.remove('hidden');
-  // small bounce on envelope
   const env = document.getElementById('envelopeBtn');
   env.style.transform = 'scale(0.9)';
   setTimeout(() => env.style.transform = '', 200);
@@ -86,7 +104,6 @@ function openLetter() {
 
 function closeLetter() {
   document.getElementById('letterOverlay').classList.add('hidden');
-  // Transition to main app
   const landing = document.getElementById('landing');
   landing.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
   landing.style.opacity = '0';
@@ -110,7 +127,6 @@ function showMainApp() {
 }
 
 function goHome() {
-  // reload page to go back to landing
   window.location.reload();
 }
 
@@ -130,13 +146,12 @@ function updateDateDisplay() {
 }
 
 // ============================================
-// COUNTS
+// COUNTS — đọc từ Supabase
 // ============================================
 async function updateAllCounts() {
   for (const key in SECTIONS) {
-    const data = await getData(key);
+    const data = await fetchSection(key);
     const el = document.getElementById('count-' + key);
-
     if (el) {
       el.textContent = data.length + ' ' + SECTIONS[key].unit;
     }
@@ -148,7 +163,6 @@ async function updateAllCounts() {
 // ============================================
 async function openSection(key) {
   currentSection = key;
-
   const cfg = SECTIONS[key];
 
   document.getElementById('headerEmoji').textContent = cfg.icon;
@@ -157,8 +171,7 @@ async function openSection(key) {
   document.getElementById('homeGrid').classList.add('hidden');
   document.getElementById('sectionView').classList.remove('hidden');
 
-  document.getElementById('sectionTitle').textContent =
-    cfg.icon + ' ' + cfg.label;
+  document.getElementById('sectionTitle').textContent = cfg.icon + ' ' + cfg.label;
 
   if (key === 'diary') {
     document.getElementById('addForm').classList.add('hidden');
@@ -166,9 +179,7 @@ async function openSection(key) {
   } else {
     document.getElementById('addForm').classList.remove('hidden');
     document.getElementById('diaryForm').classList.add('hidden');
-
-    document.getElementById('priceRow').style.display =
-      cfg.hasPrice ? '' : 'none';
+    document.getElementById('priceRow').style.display = cfg.hasPrice ? '' : 'none';
   }
 
   await renderList(key);
@@ -184,11 +195,13 @@ function backToHome() {
 }
 
 // ============================================
-// RENDER LIST
+// RENDER LIST — đọc từ Supabase
 // ============================================
-function renderList(key) {
+async function renderList(key) {
   const container = document.getElementById('itemsList');
-  const data = getData(key);
+  container.innerHTML = `<div class="empty-state"><div class="loading-dots">🌸 Đang tải...</div></div>`;
+
+  const data = await fetchSection(key);
   const cfg = SECTIONS[key];
 
   if (data.length === 0) {
@@ -208,11 +221,12 @@ function renderList(key) {
     sorted.forEach((item, idx) => {
       const card = document.createElement('div');
       card.className = 'item-card diary-card-item';
+      const displayText = item.diary_text || item.text || '';
       card.innerHTML = `
         <div class="item-num">${sorted.length - idx}</div>
         <div class="item-content">
           <div class="diary-time">🕐 ${formatDateTime(item.ts)}</div>
-          <div class="diary-text">${escHtml(item.text)}</div>
+          <div class="diary-text">${escHtml(displayText)}</div>
         </div>
         <div class="item-actions">
           <button class="del-btn" onclick="askDelete('${item.id}','diary','Tâm sự ngày ${formatDate(item.ts)}')">🗑️ Xoá</button>
@@ -230,7 +244,6 @@ function renderList(key) {
       if (item.link) {
         metaHtml += `<a class="item-badge badge-link" href="${escHtml(item.link)}" target="_blank" rel="noopener">🔗 Xem link</a>`;
       }
-
       card.innerHTML = `
         <div class="item-num">${idx + 1}</div>
         <div class="item-content">
@@ -248,64 +261,51 @@ function renderList(key) {
 }
 
 // ============================================
-// ADD ITEM
+// ADD ITEM — ghi vào Supabase
 // ============================================
 async function addItem() {
-
-  const name =
-    document.getElementById('fName').value.trim();
-
+  const name = document.getElementById('fName').value.trim();
   if (!name) {
     showToast('⚠️ Em nhập tên trước nha!');
     return;
   }
 
-  const link =
-    document.getElementById('fLink').value.trim();
-
-  const price =
-    document.getElementById('fPrice').value.trim();
-
-  const note =
-    document.getElementById('fNote').value.trim();
+  const link  = document.getElementById('fLink').value.trim();
+  const price = document.getElementById('fPrice').value.trim();
+  const note  = document.getElementById('fNote').value.trim();
 
   const { error } = await supabase
     .from('entries')
-    .insert([
-      {
-        section: currentSection,
-        name,
-        link,
-        price,
-        note,
-        ts: Date.now()
-      }
-    ]);
+    .insert([{
+      section: currentSection,
+      name,
+      link:  link  || null,
+      price: price || null,
+      note:  note  || null,
+      ts: Date.now()
+    }]);
 
   if (error) {
-    console.error(error);
+    console.error('addItem error:', error);
+    showToast('❌ Lỗi khi thêm, em thử lại nha!');
     return;
   }
 
-  document.getElementById('fName').value = '';
-  document.getElementById('fLink').value = '';
+  document.getElementById('fName').value  = '';
+  document.getElementById('fLink').value  = '';
   document.getElementById('fPrice').value = '';
-  document.getElementById('fNote').value = '';
+  document.getElementById('fNote').value  = '';
 
   await renderList(currentSection);
   await updateAllCounts();
-
   showToast('💕 Đã thêm vào danh sách!');
 }
 
 // ============================================
-// ADD DIARY
+// ADD DIARY — ghi vào Supabase
 // ============================================
 async function addDiary() {
-
-  const text =
-    document.getElementById('fDiary').value.trim();
-
+  const text = document.getElementById('fDiary').value.trim();
   if (!text) {
     showToast('⚠️ Em viết gì đi nha!');
     return;
@@ -313,43 +313,42 @@ async function addDiary() {
 
   const { error } = await supabase
     .from('entries')
-    .insert([
-      {
-        section: 'diary',
-        diary_text: text,
-        name: 'diary',
-        ts: Date.now()
-      }
-    ]);
+    .insert([{
+      section:    'diary',
+      name:       'diary',
+      diary_text: text,
+      ts: Date.now()
+    }]);
 
   if (error) {
-    console.error(error);
+    console.error('addDiary error:', error);
+    showToast('❌ Lỗi khi lưu, em thử lại nha!');
     return;
   }
 
   document.getElementById('fDiary').value = '';
-
   await renderList('diary');
   await updateAllCounts();
-
   showToast('💌 Đã lưu tâm sự!');
 }
 
 // ============================================
-// EDIT
+// EDIT — mở modal, đọc dữ liệu từ Supabase
 // ============================================
-function openEdit(id, sectionKey) {
-  const data = getData(sectionKey);
-  const item = data.find(i => i.id === id);
-  if (!item) return;
+async function openEdit(id, sectionKey) {
+  const item = await fetchItemById(id);
+  if (!item) {
+    showToast('❌ Không tìm thấy mục này!');
+    return;
+  }
 
   const cfg = SECTIONS[sectionKey];
-  document.getElementById('editId').value = id;
+  document.getElementById('editId').value      = id;
   document.getElementById('editSection').value = sectionKey;
-  document.getElementById('editName').value = item.name || '';
-  document.getElementById('editLink').value = item.link || '';
-  document.getElementById('editPrice').value = item.price || '';
-  document.getElementById('editNote').value = item.note || '';
+  document.getElementById('editName').value    = item.name  || '';
+  document.getElementById('editLink').value    = item.link  || '';
+  document.getElementById('editPrice').value   = item.price || '';
+  document.getElementById('editNote').value    = item.note  || '';
   document.getElementById('editPriceRow').style.display = cfg.hasPrice ? '' : 'none';
 
   document.getElementById('editModal').classList.remove('hidden');
@@ -359,29 +358,44 @@ function closeEdit() {
   document.getElementById('editModal').classList.add('hidden');
 }
 
-function saveEdit() {
-  const id = document.getElementById('editId').value;
+// saveEdit — cập nhật Supabase
+async function saveEdit() {
+  const id         = document.getElementById('editId').value;
   const sectionKey = document.getElementById('editSection').value;
-  const name = document.getElementById('editName').value.trim();
-  if (!name) { showToast('⚠️ Em nhập tên trước nha!'); return; }
+  const name       = document.getElementById('editName').value.trim();
 
-  const data = getData(sectionKey);
-  const idx = data.findIndex(i => i.id === id);
-  if (idx === -1) return;
+  if (!name) {
+    showToast('⚠️ Em nhập tên trước nha!');
+    return;
+  }
 
-  data[idx].name  = name;
-  data[idx].link  = document.getElementById('editLink').value.trim();
-  data[idx].price = document.getElementById('editPrice').value.trim();
-  data[idx].note  = document.getElementById('editNote').value.trim();
-  setData(sectionKey, data);
+  const link  = document.getElementById('editLink').value.trim();
+  const price = document.getElementById('editPrice').value.trim();
+  const note  = document.getElementById('editNote').value.trim();
+
+  const { error } = await supabase
+    .from('entries')
+    .update({
+      name,
+      link:  link  || null,
+      price: price || null,
+      note:  note  || null,
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('saveEdit error:', error);
+    showToast('❌ Lỗi khi lưu, em thử lại nha!');
+    return;
+  }
 
   closeEdit();
-  renderList(sectionKey);
+  await renderList(sectionKey);
   showToast('✅ Đã cập nhật!');
 }
 
 // ============================================
-// DELETE
+// DELETE — xoá khỏi Supabase
 // ============================================
 function askDelete(id, sectionKey, label) {
   deleteTarget = { id, section: sectionKey };
@@ -395,9 +409,7 @@ function closeDelete() {
 }
 
 async function confirmDelete() {
-
-  const { id } = deleteTarget;
-
+  const { id, section } = deleteTarget;
   if (!id) return;
 
   const { error } = await supabase
@@ -406,15 +418,14 @@ async function confirmDelete() {
     .eq('id', id);
 
   if (error) {
-    console.error(error);
+    console.error('confirmDelete error:', error);
+    showToast('❌ Lỗi khi xoá, em thử lại nha!');
     return;
   }
 
   closeDelete();
-
-  await renderList(currentSection);
+  await renderList(section || currentSection);
   await updateAllCounts();
-
   showToast('🗑️ Đã xoá rồi nha!');
 }
 
@@ -448,14 +459,14 @@ function escHtml(str) {
 }
 
 function formatDateTime(ts) {
-  const d = new Date(ts);
+  const d = new Date(Number(ts));
   const pad = n => n.toString().padStart(2, '0');
   const days = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
   return `${days[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} lúc ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function formatDate(ts) {
-  const d = new Date(ts);
+  const d = new Date(Number(ts));
   const pad = n => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
 }
@@ -465,13 +476,13 @@ function formatDate(ts) {
 // ============================================
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (!document.getElementById('editModal').classList.contains('hidden')) closeEdit();
+    if (!document.getElementById('editModal').classList.contains('hidden'))   closeEdit();
     if (!document.getElementById('deleteModal').classList.contains('hidden')) closeDelete();
     if (!document.getElementById('letterOverlay').classList.contains('hidden')) closeLetter();
   }
   if (e.key === 'Enter' && e.ctrlKey) {
     if (currentSection === 'diary') addDiary();
-    else if (currentSection) addItem();
+    else if (currentSection)        addItem();
   }
 });
 
@@ -480,5 +491,4 @@ document.addEventListener('keydown', e => {
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
   initLanding();
-  updateAllCounts(); // so counts are ready when app opens
 });
