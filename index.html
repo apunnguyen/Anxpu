@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💕 Không gian của em yêu</title>
+  <meta name="description" content="Nơi lưu giữ những điều em yêu thích, những ước mơ nhỏ và tâm sự của em." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Pacifico&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== LANDING SCREEN ===== -->
+  <div id="landing" class="landing-screen">
+    <div class="petals-container" id="petals"></div>
+    <div class="landing-content">
+      <div class="landing-title">
+        <span class="heart-icon">💗</span>
+        <h1>Không gian của em yêu</h1>
+        <span class="heart-icon">💗</span>
+      </div>
+      <p class="landing-subtitle">Nhấn vào lá thư để mở nhé ✨</p>
+      <div class="envelope-wrapper" id="envelopeBtn" onclick="openLetter()">
+        <div class="envelope">
+          <div class="envelope-flap"></div>
+          <div class="envelope-body">
+            <div class="envelope-heart">💌</div>
+          </div>
+          <div class="envelope-shine"></div>
+        </div>
+        <div class="envelope-glow"></div>
+      </div>
+    </div>
+    <div class="floating-hearts" id="floatingHearts"></div>
+  </div>
+
+  <!-- ===== LETTER POPUP ===== -->
+  <div id="letterOverlay" class="letter-overlay hidden">
+    <div class="letter-container">
+      <div class="letter-paper">
+        <div class="letter-decoration top-decoration">
+          <span>🌸</span><span>🌷</span><span>🌸</span>
+        </div>
+        <div class="letter-body">
+          <p class="letter-greeting">Gửi em yêu,</p>
+          <p class="letter-text">
+            Đây sẽ là nơi để em có thể cập nhật những suy nghĩ
+            và mong muốn của em, anh sẽ liên tục xem và làm
+            từng điều em muốn nha
+          </p>
+          <p class="letter-heart">❤️</p>
+          <p class="letter-sign">~ Anh yêu em ~</p>
+        </div>
+        <div class="letter-decoration bottom-decoration">
+          <span>🌹</span><span>💕</span><span>🌹</span>
+        </div>
+      </div>
+      <button class="letter-close-btn" onclick="closeLetter()">
+        Vào xem nào! 🎀
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div id="mainApp" class="main-app hidden">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="header-left">
+          <button class="back-home-btn" onclick="goHome()" title="Về trang chủ">🏠</button>
+        </div>
+        <div class="header-title">
+          <span class="header-emoji" id="headerEmoji">💗</span>
+          <h2 id="headerTitle">Không gian của em yêu</h2>
+        </div>
+        <div class="header-right">
+          <span class="date-display" id="dateDisplay"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Home Grid -->
+    <div id="homeGrid" class="home-grid">
+      <p class="home-subtitle">Em muốn xem mục nào? 🌸</p>
+      <div class="categories-grid">
+        <div class="category-card" onclick="openSection('items')" id="cat-items">
+          <div class="cat-icon">🛍️</div>
+          <div class="cat-name">Món đồ yêu thích</div>
+          <div class="cat-count" id="count-items">0 món</div>
+        </div>
+        <div class="category-card" onclick="openSection('food')" id="cat-food">
+          <div class="cat-icon">🍜</div>
+          <div class="cat-name">Địa điểm ăn uống</div>
+          <div class="cat-count" id="count-food">0 nơi</div>
+        </div>
+        <div class="category-card" onclick="openSection('photo')" id="cat-photo">
+          <div class="cat-icon">📸</div>
+          <div class="cat-name">Chỗ chụp hình</div>
+          <div class="cat-count" id="count-photo">0 nơi</div>
+        </div>
+        <div class="category-card" onclick="openSection('travel')" id="cat-travel">
+          <div class="cat-icon">✈️</div>
+          <div class="cat-name">Địa điểm du lịch</div>
+          <div class="cat-count" id="count-travel">0 nơi</div>
+        </div>
+        <div class="category-card" onclick="openSection('games')" id="cat-games">
+          <div class="cat-icon">🎮</div>
+          <div class="cat-name">Trò chơi muốn chơi</div>
+          <div class="cat-count" id="count-games">0 trò</div>
+        </div>
+        <div class="category-card" onclick="openSection('movies')" id="cat-movies">
+          <div class="cat-icon">🎬</div>
+          <div class="cat-name">Phim muốn xem</div>
+          <div class="cat-count" id="count-movies">0 phim</div>
+        </div>
+        <div class="category-card diary-card" onclick="openSection('diary')" id="cat-diary">
+          <div class="cat-icon">📔</div>
+          <div class="cat-name">Tâm sự của em</div>
+          <div class="cat-count" id="count-diary">0 tâm sự</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section View -->
+    <div id="sectionView" class="section-view hidden">
+      <div class="section-header">
+        <button class="back-btn" onclick="backToHome()">← Quay lại</button>
+        <h3 id="sectionTitle">Tiêu đề</h3>
+      </div>
+
+      <!-- Add Form (not for diary) -->
+      <div id="addForm" class="add-form">
+        <div class="form-card">
+          <h4 class="form-title">✨ Thêm mới</h4>
+          <div class="form-row">
+            <label>Tên *</label>
+            <input type="text" id="fName" placeholder="Nhập tên..." />
+          </div>
+          <div class="form-row">
+            <label>Link (tuỳ chọn)</label>
+            <input type="url" id="fLink" placeholder="https://..." />
+          </div>
+          <div class="form-row" id="priceRow">
+            <label>Giá tiền (tuỳ chọn)</label>
+            <input type="text" id="fPrice" placeholder="VD: 250,000đ" />
+          </div>
+          <div class="form-row">
+            <label>Ghi chú (tuỳ chọn)</label>
+            <textarea id="fNote" placeholder="Ghi chú thêm..."></textarea>
+          </div>
+          <button class="add-btn" onclick="addItem()">💕 Thêm vào danh sách</button>
+        </div>
+      </div>
+
+      <!-- Diary Form -->
+      <div id="diaryForm" class="add-form hidden">
+        <div class="form-card diary-form-card">
+          <h4 class="form-title">📔 Tâm sự của em</h4>
+          <p class="diary-hint">Hôm nay em muốn nói gì không? 🌸</p>
+          <div class="form-row">
+            <textarea id="fDiary" placeholder="Viết tâm sự của em ở đây nha..." rows="5"></textarea>
+          </div>
+          <button class="add-btn" onclick="addDiary()">💌 Lưu tâm sự</button>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div id="itemsList" class="items-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== EDIT MODAL ===== -->
+  <div id="editModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h4 class="modal-title">✏️ Chỉnh sửa</h4>
+      <input type="hidden" id="editId" />
+      <input type="hidden" id="editSection" />
+      <div class="form-row">
+        <label>Tên *</label>
+        <input type="text" id="editName" placeholder="Nhập tên..." />
+      </div>
+      <div class="form-row">
+        <label>Link (tuỳ chọn)</label>
+        <input type="url" id="editLink" placeholder="https://..." />
+      </div>
+      <div class="form-row" id="editPriceRow">
+        <label>Giá tiền (tuỳ chọn)</label>
+        <input type="text" id="editPrice" placeholder="VD: 250,000đ" />
+      </div>
+      <div class="form-row">
+        <label>Ghi chú (tuỳ chọn)</label>
+        <textarea id="editNote" placeholder="Ghi chú thêm..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeEdit()">Huỷ</button>
+        <button class="save-btn" onclick="saveEdit()">💾 Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DELETE CONFIRM ===== -->
+  <div id="deleteModal" class="modal-overlay hidden">
+    <div class="modal-box small-modal">
+      <div class="delete-icon">🗑️</div>
+      <h4>Xoá mục này?</h4>
+      <p id="deleteItemName" class="delete-name"></p>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeDelete()">Không</button>
+        <button class="delete-confirm-btn" onclick="confirmDelete()">Xoá nha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
