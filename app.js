@@ -1,7 +1,16 @@
 /* ============================================
    💕 KHÔNG GIAN CỦA EM YÊU - APP.JS
    ============================================ */
+const SUPABASE_URL =
+  "https://ugxfbzsnpmwnwrwaanir.supabase.co";
 
+const SUPABASE_KEY =
+  "sb_publishable_rzp9YtPP-YHNOo95AtY4hA_b1zJIncj";
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 // ---- Config ----
 const SECTIONS = {
   items:  { label: 'Món đồ yêu thích',    icon: '🛍️', hasPrice: true,  unit: 'món' },
