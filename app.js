@@ -6,7 +6,7 @@
 const SUPABASE_URL = "https://ugxfbzsnpmwnwrwaanir.supabase.co";
 const SUPABASE_KEY = "sb_publishable_rzp9YtPP-YHNOo95AtY4hA_b1zJIncj";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---- Config ----
 const SECTIONS = {
@@ -28,7 +28,7 @@ let deleteTarget = { id: null, section: null };
 
 /** Lấy tất cả items của một section từ Supabase */
 async function fetchSection(sectionKey) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('entries')
     .select('*')
     .eq('section', sectionKey)
@@ -43,7 +43,7 @@ async function fetchSection(sectionKey) {
 
 /** Lấy một item theo id từ Supabase */
 async function fetchItemById(id) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('entries')
     .select('*')
     .eq('id', id)
@@ -274,7 +274,7 @@ async function addItem() {
   const price = document.getElementById('fPrice').value.trim();
   const note  = document.getElementById('fNote').value.trim();
 
-  const { error } = await supabase
+  const { error } = await db
     .from('entries')
     .insert([{
       section: currentSection,
@@ -311,7 +311,7 @@ async function addDiary() {
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('entries')
     .insert([{
       section:    'diary',
@@ -373,7 +373,7 @@ async function saveEdit() {
   const price = document.getElementById('editPrice').value.trim();
   const note  = document.getElementById('editNote').value.trim();
 
-  const { error } = await supabase
+  const { error } = await db
     .from('entries')
     .update({
       name,
@@ -412,7 +412,7 @@ async function confirmDelete() {
   const { id, section } = deleteTarget;
   if (!id) return;
 
-  const { error } = await supabase
+  const { error } = await db
     .from('entries')
     .delete()
     .eq('id', id);
